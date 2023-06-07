@@ -1,11 +1,92 @@
 import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
 import styles from '@/styles/Home.module.css'
+import { useEffect, useState } from 'react'
+import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { db } from '../../firebase.init';
 
-const inter = Inter({ subsets: ['latin'] })
+
 
 export default function Home() {
+  const databaseRef = collection(db,'projectDetails')
+
+  const [name,setName] = useState('');
+  const [desc,setDesc] = useState('');
+  const [url,setUrl] = useState('');
+  const [data,setData] = useState([]);
+  
+  const [ID, setID] = useState(null);
+  const [isUpdate, setIsUpdate] = useState(false);
+
+  //Data add function
+  const addDataToDatabase = () =>{
+    addDoc(databaseRef,{
+      name,
+      desc,
+      url
+    })
+    .then(() => {
+      alert('data added')
+      getData()
+    })
+    .catch((err) =>{
+      
+    }) 
+  }
+
+  useEffect(() =>{
+    getData()
+  },[])
+
+
+  //Data retrive function
+
+  const getData = async() => {
+    await getDocs(databaseRef)
+    .then((response) =>{
+      setData(response.docs.map((data)=>{
+        return {...data.data(), id: data.id}
+      }))
+    })
+  }
+
+
+  //Data update function
+  const getID = (id, name, desc) => {
+    setID(id)
+    setName(name)
+    setDesc(desc)
+   
+  }
+  const updateFields = () => {
+    let fieldToEdit = doc(db, 'projectDetails', ID);
+    updateDoc(fieldToEdit, {
+      name: name,
+      desc : desc,
+      
+    })
+    .then(() => {
+      alert('Data Updated')
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+  }
+
+
+  // Delete single data 
+  const deleteData = (id) => {
+    let fieldToEdit = doc(db, 'projectDetails', id);
+    deleteDoc(fieldToEdit)
+    .then(() => {
+      alert('Data Deleted')
+      getData()
+    })
+    .catch((err) => {
+      alert('Cannot Delete that field..')
+    })
+  }
+  
+
   return (
     <>
       <Head>
@@ -14,109 +95,30 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>src/pages/index.js</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
+      <main>
 
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
+      <input value={name}  onChange={event => setName(event.target.value)}  placeholder='name' type="text" /><br />
+      <input value={desc}  onChange={event => setDesc(event.target.value)}   placeholder='description' type="text"  /><br />
+      <input value={ID}      type="text"  /><br />
+      <button onClick={addDataToDatabase} >
+        ADD
+      </button>
+      <button onClick={updateFields} >
+        Update
+      </button>
 
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
+      {data.map((d) =>{
+            return (
+              <div style={{border:'1px solid black'}}>
+                <h1> Name : {d.name}</h1>
+                <h1> Description : {d.desc}</h1>
+                <button onClick={() => getID(d.id, d.name, d.desc )}>Update</button>
+                <button onClick={() => deleteData(d.id)} >Delete</button>
+              </div>
+            )
+      })}
 
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
 
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
       </main>
     </>
   )
